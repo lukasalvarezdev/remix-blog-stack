@@ -19,13 +19,11 @@
 		"@remix-run/serve": "^2.12.0",
 		"clsx": "^2.1.1",
 		"esbuild": "^0.23.1",
-		"gray-matter": "^4.0.3",
 		"isbot": "^4.1.0",
 		"mdx-bundler": "^10.0.3",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"rehype-pretty-code": "^0.14.0",
-		"remixicon": "^4.3.0",
 		"tailwind-merge": "^2.5.2"
 	},
 	"devDependencies": {
@@ -53,6 +51,5 @@
 	},
 	"engines": {
 		"node": ">=20.0.0"
-	},
-	"packageManager": "pnpm@8.15.9+sha512.499434c9d8fdd1a2794ebf4552b3b25c0a633abcee5bb15e7b5de90f32f47b513aca98cd5cfd001c31f0db454bc3804edccd578501e4ca293a6816166bbd9f81"
+	}
 }
