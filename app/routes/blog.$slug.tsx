@@ -1,34 +1,17 @@
 import * as React from 'react';
 import { LoaderFunctionArgs } from '@remix-run/node';
-import { Link, MetaFunction, useLoaderData } from '@remix-run/react';
+import { Link, useLoaderData } from '@remix-run/react';
 import { getMDXComponent } from 'mdx-bundler/client';
-import { bundleMDX } from 'mdx-bundler';
-import { rehypePrettyCode } from 'rehype-pretty-code';
-import { getSocialMetas } from '~/utils/misc';
-import { RootLoaderType } from '~/root';
-import { getFrontMatter, getMdxPage } from '~/utils/blog.server';
+import { getPostBySlug } from '~/utils/blog.server';
+import { blogPageMeta } from '~/utils/blog.meta';
+import { cn } from '~/utils/misc';
+
+export const meta = blogPageMeta;
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const { slug } = params;
-
 	if (!slug) throw new Error('No slug provided');
-
-	const fileContent = await getMdxPage(slug);
-
-	const { code, frontmatter } = await bundleMDX({
-		source: fileContent,
-		mdxOptions(options) {
-			options.remarkPlugins = [...(options.remarkPlugins ?? [])];
-			options.rehypePlugins = [
-				...(options.rehypePlugins ?? []),
-				[rehypePrettyCode, { theme: { dark: 'github-dark-dimmed', light: 'github-light' } }],
-			];
-
-			return options;
-		},
-	});
-
-	return { code, slug, metadata: getFrontMatter(frontmatter) };
+	return await getPostBySlug(slug);
 }
 
 export default function BlogPost() {
@@ -37,10 +20,18 @@ export default function BlogPost() {
 	const Component = React.useMemo(() => getMDXComponent(code), [code]);
 
 	return (
-		<div key={slug}>
+		<div key={slug} className="text-lg py-6">
 			<div className="max-w-2xl mx-auto">
-				<Link to="/">Back to blog</Link>
-				<h1 className="mb-2 text-black dark:text-white">{metadata.title}</h1>
+				<Link
+					to="/"
+					className="flex gap-2 mb-8 text-base text-black dark:text-white items-center group max-w-max"
+				>
+					<ArrowBack />
+					Back to blog
+				</Link>
+				<h1 className="mb-2 text-black dark:text-white text-4xl font-medium">
+					{metadata.title}
+				</h1>
 				<p className="text-sm mb-8">{metadata.date}</p>
 			</div>
 
@@ -60,46 +51,23 @@ export default function BlogPost() {
 	);
 }
 
-type ExtraMeta = Array<{ [key: string]: string }>;
-type MetaLoader = typeof loader;
-
-export const meta: MetaFunction<MetaLoader, { root: RootLoaderType }> = ({ data, matches }) => {
-	const requestInfo = getRequestInfo();
-
-	if (data) {
-		const extraMetaInfo = data.metadata.meta ?? {};
-		const extraMeta: ExtraMeta = Object.entries(extraMetaInfo).reduce(
-			(acc: ExtraMeta, [key, val]) => [...acc, { [key]: String(val) }],
-			[],
-		);
-
-		const title = data.metadata.title;
-		const url = getUrl(requestInfo);
-
-		return [
-			...getSocialMetas({
-				url,
-				title,
-				description: data.metadata.description,
-				image: data.metadata.bannerUrl,
-			}),
-			...extraMeta,
-		].filter(Boolean);
-	} else {
-		return [{ title: 'Not found' }, { description: 'You landed on the wrong place buddy' }];
-	}
-
-	function getRequestInfo() {
-		return (matches.find(m => m.id === 'root')?.data as RootLoaderType)?.requestInfo;
-	}
-};
-
-function getOrigin(requestInfo?: { origin?: string; path: string }) {
-	return requestInfo?.origin ?? 'https://lukasalvarez.com';
-}
-function removeTrailingSlash(s: string) {
-	return s.endsWith('/') ? s.slice(0, -1) : s;
-}
-function getUrl(requestInfo?: { origin: string; path: string }) {
-	return removeTrailingSlash(`${getOrigin(requestInfo)}${requestInfo?.path ?? ''}`);
+function ArrowBack(props: React.ComponentProps<'svg'>) {
+	return (
+		<svg
+			width="32"
+			height="32"
+			viewBox="0 0 32 32"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			{...props}
+			className={cn('transform rotate-90 group-hover:-translate-x-1 transition-all')}
+		>
+			<path
+				fillRule="evenodd"
+				clipRule="evenodd"
+				d="M15.101 5.5V23.1094L9.40108 17.4095L8.14807 18.6619L15.9862 26.5L23.852 18.6342L22.5996 17.3817L16.8725 23.1094V5.5H15.101Z"
+				fill="currentColor"
+			></path>
+		</svg>
+	);
 }

@@ -1,5 +1,6 @@
 {
-	"name": "my-remix-app",
+	"name": "remix-blog-stack",
+	"author": "Lukas Alvarez",
 	"private": true,
 	"sideEffects": false,
 	"type": "module",

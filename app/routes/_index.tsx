@@ -1,38 +1,27 @@
 import type { MetaFunction } from '@remix-run/node';
 import { defer, Link, useLoaderData } from '@remix-run/react';
-import { bundleMDX } from 'mdx-bundler';
-import { getFrontMatter, postContentsBySlug } from '~/utils/blog.server';
+import { getAllPosts } from '~/utils/blog.server';
 import { cn } from '~/utils/misc';
 
 export const meta: MetaFunction = () => {
-	return [{ title: 'Remix blog template by Lukas Alvarez' }];
+	return [{ title: 'Remix Blog Stack by Lukas Alvarez' }];
 };
 
 export async function loader() {
-	async function getPosts() {
-		const posts = await Promise.all(
-			Array.from(Object.entries(postContentsBySlug))
-				.slice(0, 3)
-				.map(async ([slug, content]) => {
-					const { frontmatter } = await bundleMDX({ source: content });
-					return { slug, metadata: getFrontMatter(frontmatter) };
-				}),
-		);
-
-		return posts.sort(
-			(a, b) => new Date(b.metadata.rawDate).getTime() - new Date(a.metadata.rawDate).getTime(),
-		);
-	}
-
-	return defer({ posts: await getPosts() });
+	return defer({ posts: await getAllPosts() });
 }
 
 export default function Index() {
 	const { posts } = useLoaderData<typeof loader>();
 
 	return (
-		<div>
-			<h2 className="mb-8 text-center">Blog posts</h2>
+		<div className="mx-auto max-w-4xl py-8 text-lg">
+			<h1 className="mb-4 text-center text-black font-bold text-5xl">Remix Blog Stack</h1>
+
+			<p className="mb-8 text-center max-w-2xl mx-auto">
+				Add your blog posts to the <code>app/content</code> directory. Each post should be a{' '}
+				<code>.mdx</code> file. Check the README for more information.
+			</p>
 
 			<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 				{posts.map(post => (
@@ -52,11 +41,24 @@ export default function Index() {
 								)}
 							></div>
 						</div>
-						<p className="text-sm">{post.metadata.date}</p>
-						<h4>{post.metadata.title}</h4>
+						<p className="text-sm text-gray-600">{post.metadata.date}</p>
+						<h4 className="font-medium">{post.metadata.title}</h4>
 					</Link>
 				))}
 			</div>
+
+			<p className="mt-12">
+				Made by{' '}
+				<a
+					className="underline"
+					href="https://lukasalvarez.com"
+					target="_blank"
+					rel="noopener noreferrer"
+				>
+					Lukas Alvarez
+				</a>{' '}
+				&copy; {new Date().getFullYear()}
+			</p>
 		</div>
 	);
 }

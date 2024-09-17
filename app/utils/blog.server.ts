@@ -1,6 +1,43 @@
+import { bundleMDX } from 'mdx-bundler';
 import { formatDate } from './misc';
+import { rehypePrettyCode } from 'rehype-pretty-code';
 
-export const postContentsBySlug = Object.fromEntries(
+export async function getAllPosts() {
+	const posts = await Promise.all(
+		Array.from(Object.entries(postContentsBySlug))
+			.slice(0, 3)
+			.map(async ([slug, content]) => {
+				const { frontmatter } = await bundleMDX({ source: content });
+				return { slug, metadata: getFrontMatter(frontmatter) };
+			}),
+	);
+
+	return posts.sort(
+		(a, b) => new Date(b.metadata.rawDate).getTime() - new Date(a.metadata.rawDate).getTime(),
+	);
+}
+
+export async function getPostBySlug(slug: string) {
+	const fileContent = await getMdxPage(slug);
+
+	const { code, frontmatter } = await bundleMDX({
+		source: fileContent,
+		mdxOptions(options) {
+			options.remarkPlugins = [...(options.remarkPlugins ?? [])];
+			options.rehypePlugins = [
+				...(options.rehypePlugins ?? []),
+				[rehypePrettyCode, { theme: { dark: 'github-dark-dimmed', light: 'github-light' } }],
+			];
+
+			return options;
+		},
+	});
+
+	return { code, slug, metadata: getFrontMatter(frontmatter) };
+}
+export type PostType = Awaited<ReturnType<typeof getPostBySlug>>;
+
+const postContentsBySlug = Object.fromEntries(
 	Object.entries(
 		import.meta.glob('../content/*.mdx', {
 			query: '?raw',
